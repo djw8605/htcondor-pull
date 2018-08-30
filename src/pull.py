@@ -137,6 +137,14 @@ class Router:
             if 'JobStatus' in job.dest_ad and job.dest_ad['JobStatus'] == 4:
                 self._editJob(self.src_schedd, job.src_ad, "JobStatus", str(4))
                 print("Removing job: {}".format(job.dest_job_id))
+                
+                # The protocol for uploading files requires only sending the jobid
+                # to the schedd.  But the local client uses the IWD in the jobad
+                # So you have to have the src's jobid, and the dest's IWD so that
+                # it knows where to upload the files from
+                tmp_ad = classad.ClassAd(str(job.src_ad))
+                tmp_ad['IWD'] = job.dest_ad['IWD']
+                self.src_schedd.transferOutputSandbox( [ tmp_ad ] )
                 self.dest_schedd.act(htcondor.JobAction.Remove, [job.dest_job_id])
             if 'JobStatus' in job.src_ad and job.src_ad['JobStatus'] == 3:
                 # Remove the dest job
